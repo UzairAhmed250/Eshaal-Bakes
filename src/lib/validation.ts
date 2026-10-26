@@ -213,5 +213,5 @@ export const adminOrderStatusUpdateSchema = z.object({
 export const adminLoginSchema = z.object({
   email: z.string().email("Enter a valid admin email"),
   password: z.string().min(6, "Password is required"),
-  totpCode: z.string().max(10).optional().default(""),
+  totpCode: z.string().max(10).optional(),
 });
