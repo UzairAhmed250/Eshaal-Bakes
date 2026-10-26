@@ -1,0 +1,67 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* Warm Artisan Bakery Palette — Single source of truth for all colors, radius & typography */
+    --background: 34 43% 98%;
+    --foreground: 22 38% 14%;
+
+    --card: 36 50% 99%;
+    --card-foreground: 22 38% 14%;
+
+    --popover: 36 50% 99%;
+    --popover-foreground: 22 38% 14%;
+
+    /* Rich Raspberry-Rose / Berry Cocoa Primary */
+    --primary: 344 62% 38%;
+    --primary-foreground: 36 60% 98%;
+
+    /* Warm Pistachio / Almond Cream Secondary */
+    --secondary: 34 35% 92%;
+    --secondary-foreground: 24 38% 18%;
+
+    --muted: 32 28% 93%;
+    --muted-foreground: 22 18% 40%;
+
+    /* Caramel Gold Accent */
+    --accent: 32 72% 90%;
+    --accent-foreground: 24 55% 24%;
+
+    --destructive: 0 72% 46%;
+    --destructive-foreground: 0 0% 98%;
+
+    --success: 148 58% 32%;
+    --success-foreground: 145 60% 98%;
+
+    --warning: 36 90% 42%;
+    --warning-foreground: 36 80% 98%;
+
+    --info: 205 78% 38%;
+    --info-foreground: 205 80% 98%;
+
+    --border: 30 24% 85%;
+    --input: 30 24% 83%;
+    --ring: 344 62% 38%;
+
+    --radius: 0.75rem;
+
+    --font-sans: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    --font-display: "Playfair Display", Georgia, Cambria, "Times New Roman", serif;
+  }
+
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground font-sans antialiased selection:bg-primary/15 selection:text-primary;
+  }
+}
+
+@media print {
+  .no-print {
+    display: none !important;
+  }
+}
