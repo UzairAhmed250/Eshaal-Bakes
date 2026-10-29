@@ -69,7 +69,7 @@ const config: Config = {
         sm: "calc(var(--radius) - 4px)",
       },
       spacing: {
-        "safe-bottom": "env(safe-area-inset-bottom, 0px)",
+        "safe-bottom": "max(1rem, env(safe-area-inset-bottom, 1rem))",
       },
       fontFamily: {
         sans: ["var(--font-sans)", "system-ui", "sans-serif"],

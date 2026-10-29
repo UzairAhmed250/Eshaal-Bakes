@@ -34,16 +34,18 @@ export function ProductCard({ product, onQuickAdd }: ProductCardProps) {
     product.stock_quantity <= 4;
 
   return (
-    <div className="group flex flex-col overflow-hidden rounded-2xl border bg-card text-card-foreground shadow-xs transition-all hover:shadow-md">
+    <div className="group flex h-full flex-col overflow-hidden rounded-2xl border bg-card text-card-foreground shadow-sm transition-all hover:shadow-md">
       <Link
         href={`/products/${product.slug}`}
-        className="relative aspect-4/3 overflow-hidden bg-muted"
+        className="relative block h-56 w-full shrink-0 overflow-hidden bg-muted"
+        style={{ height: "224px" }}
       >
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           src={coverImage}
           alt={product.name}
-          className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+          className="h-full w-full object-cover object-center transition-transform duration-300 group-hover:scale-105"
+          style={{ height: "224px", width: "100%", objectFit: "cover" }}
         />
         {isOutOfStock ? (
           <span className="absolute left-3 top-3 rounded-full bg-destructive px-2.5 py-1 text-xs font-semibold text-destructive-foreground">
@@ -64,17 +66,20 @@ export function ProductCard({ product, onQuickAdd }: ProductCardProps) {
       <div className="flex flex-1 flex-col justify-between p-4">
         <div className="space-y-1.5">
           {product.category_name && (
-            <p className="text-xs font-medium text-primary">
+            <p className="line-clamp-1 text-xs font-medium text-primary">
               {product.category_name}
             </p>
           )}
           <Link
             href={`/products/${product.slug}`}
-            className="line-clamp-1 font-display text-base font-semibold text-foreground hover:text-primary"
+            className="line-clamp-1 block font-display text-base font-semibold text-foreground hover:text-primary"
           >
             {product.name}
           </Link>
-          <p className="line-clamp-2 text-xs text-muted-foreground">
+          <p
+            className="line-clamp-2 min-h-[2.5rem] text-xs leading-relaxed text-muted-foreground"
+            style={{ minHeight: "2.5rem" }}
+          >
             {product.description}
           </p>
         </div>

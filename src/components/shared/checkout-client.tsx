@@ -60,7 +60,7 @@ export function CheckoutClient({ settings }: { settings: StoreSettings }) {
   const [customerName, setCustomerName] = React.useState("");
   const [customerPhone, setCustomerPhone] = React.useState("");
   const [deliveryArea, setDeliveryArea] = React.useState(
-    settings.delivery_areas[0] ?? "DHA Phase 1-8"
+    settings.delivery_areas[0] ?? "Korangi"
   );
   const [deliveryAddress, setDeliveryAddress] = React.useState("");
   const [deliveryDate, setDeliveryDate] = React.useState(defaultSchedule.date);

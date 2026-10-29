@@ -2,7 +2,8 @@
 
 import * as React from "react";
 import { Plus, Pencil, Trash2, ArrowUp, ArrowDown } from "lucide-react";
-import { slugify } from "@/lib/utils";
+import { cn, slugify } from "@/lib/utils";
+import { productFormSchema } from "@/lib/validation";
 import { Button } from "@/components/ui/button";
 import {
   ResponsiveDialog,
@@ -72,7 +73,23 @@ export function AdminProductsClient({
   const [deleteTarget, setDeleteTarget] = React.useState<Product | null>(null);
   const [isDeleting, setIsDeleting] = React.useState(false);
 
+  // Inline field validation errors (keyed by productFormSchema field name)
+  const [fieldErrors, setFieldErrors] = React.useState<Record<string, string>>(
+    {}
+  );
+  const formRef = React.useRef<HTMLFormElement>(null);
+
+  const clearFieldError = (key: string) => {
+    setFieldErrors((prev) => {
+      if (!prev[key]) return prev;
+      const next = { ...prev };
+      delete next[key];
+      return next;
+    });
+  };
+
   const openCreateModal = () => {
+    setFieldErrors({});
     setEditingId(undefined);
     setCategoryId(categories[0]?.id ?? "");
     setName("");
@@ -92,6 +109,7 @@ export function AdminProductsClient({
   };
 
   const openEditModal = (product: Product) => {
+    setFieldErrors({});
     setEditingId(product.id);
     setCategoryId(product.category_id);
     setName(product.name);
@@ -123,52 +141,79 @@ export function AdminProductsClient({
 
   const handleSaveProduct = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    const parsedChoices = variantChoicesText
+      .split(",")
+      .map((s) => s.trim())
+      .filter(Boolean)
+      .map((pair) => {
+        const [labelPart, deltaPart] = pair.split(":");
+        return {
+          label: (labelPart ?? "").trim(),
+          priceDeltaPkr: Number.parseInt(deltaPart ?? "0", 10) || 0,
+        };
+      })
+      .filter((c) => c.label.length > 0);
+
+    const payload = {
+      id: editingId,
+      categoryId,
+      name,
+      slug: slug || slugify(name),
+      description,
+      pricePkr,
+      compareAtPricePkr:
+        compareAtPricePkr > pricePkr ? compareAtPricePkr : null,
+      trackInventory,
+      stockQuantity: trackInventory ? stockQuantity : null,
+      allowCustomText,
+      isActive,
+      images: imageUrls.map((url, idx) => ({
+        url,
+        altText: name,
+        sortOrder: idx,
+      })),
+      options:
+        parsedChoices.length > 0
+          ? [
+              {
+                name: "Option",
+                required: true,
+                choices: parsedChoices,
+              },
+            ]
+          : [],
+    };
+
+    // Client-side validation with the same Zod schema the API uses
+    const validation = productFormSchema.safeParse(payload);
+    if (!validation.success) {
+      const nextErrors: Record<string, string> = {};
+      for (const issue of validation.error.issues) {
+        const key = String(issue.path[0] ?? "form");
+        if (!nextErrors[key]) nextErrors[key] = issue.message;
+      }
+      setFieldErrors(nextErrors);
+      toast({
+        title: "Please fix the highlighted fields",
+        description: Object.values(nextErrors)[0],
+        variant: "error",
+      });
+      // Scroll the first invalid field into view inside the modal body
+      requestAnimationFrame(() => {
+        const firstInvalid = formRef.current?.querySelector<HTMLElement>(
+          '[aria-invalid="true"]'
+        );
+        firstInvalid?.scrollIntoView({ behavior: "smooth", block: "center" });
+        firstInvalid?.focus({ preventScroll: true });
+      });
+      return;
+    }
+
+    setFieldErrors({});
     setIsSaving(true);
 
     try {
-      const parsedChoices = variantChoicesText
-        .split(",")
-        .map((s) => s.trim())
-        .filter(Boolean)
-        .map((pair) => {
-          const [labelPart, deltaPart] = pair.split(":");
-          return {
-            label: (labelPart ?? "").trim(),
-            priceDeltaPkr: Number.parseInt(deltaPart ?? "0", 10) || 0,
-          };
-        })
-        .filter((c) => c.label.length > 0);
-
-      const payload = {
-        id: editingId,
-        categoryId,
-        name,
-        slug: slug || slugify(name),
-        description,
-        pricePkr,
-        compareAtPricePkr:
-          compareAtPricePkr > pricePkr ? compareAtPricePkr : null,
-        trackInventory,
-        stockQuantity: trackInventory ? stockQuantity : null,
-        allowCustomText,
-        isActive,
-        images: imageUrls.map((url, idx) => ({
-          url,
-          altText: name,
-          sortOrder: idx,
-        })),
-        options:
-          parsedChoices.length > 0
-            ? [
-                {
-                  name: "Option",
-                  required: true,
-                  choices: parsedChoices,
-                },
-              ]
-            : [],
-      };
-
       const res = await fetch("/api/admin/products", {
         method: editingId ? "PUT" : "POST",
         headers: { "Content-Type": "application/json" },
@@ -424,17 +469,25 @@ export function AdminProductsClient({
             </ResponsiveDialogDescription>
           </ResponsiveDialogHeader>
 
-          <form onSubmit={handleSaveProduct} className="flex flex-col flex-1 overflow-hidden">
+          <form
+            ref={formRef}
+            noValidate
+            onSubmit={handleSaveProduct}
+            className="flex flex-col flex-1 overflow-hidden"
+          >
             <ResponsiveDialogBody className="space-y-4">
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <TextInput
                   label="Product Name"
                   required
                   value={name}
+                  error={fieldErrors.name}
                   onChange={(e) => {
                     setName(e.target.value);
+                    clearFieldError("name");
                     if (!editingId) {
                       setSlug(slugify(e.target.value));
+                      clearFieldError("slug");
                     }
                   }}
                 />
@@ -442,7 +495,11 @@ export function AdminProductsClient({
                   label="URL Slug"
                   required
                   value={slug}
-                  onChange={(e) => setSlug(slugify(e.target.value))}
+                  error={fieldErrors.slug}
+                  onChange={(e) => {
+                    setSlug(slugify(e.target.value));
+                    clearFieldError("slug");
+                  }}
                 />
               </div>
 
@@ -451,7 +508,11 @@ export function AdminProductsClient({
                   label="Category"
                   required
                   value={categoryId}
-                  onChange={setCategoryId}
+                  error={fieldErrors.categoryId}
+                  onChange={(v) => {
+                    setCategoryId(v);
+                    clearFieldError("categoryId");
+                  }}
                   options={categories.map((c) => ({
                     value: c.id,
                     label: c.name,
@@ -461,12 +522,20 @@ export function AdminProductsClient({
                   label="Price (PKR)"
                   required
                   value={pricePkr}
-                  onChange={setPricePkr}
+                  error={fieldErrors.pricePkr}
+                  onChange={(v) => {
+                    setPricePkr(v);
+                    clearFieldError("pricePkr");
+                  }}
                 />
                 <PriceInput
                   label="Compare-at Price (Optional)"
                   value={compareAtPricePkr}
-                  onChange={setCompareAtPricePkr}
+                  error={fieldErrors.compareAtPricePkr}
+                  onChange={(v) => {
+                    setCompareAtPricePkr(v);
+                    clearFieldError("compareAtPricePkr");
+                  }}
                 />
               </div>
 
@@ -474,7 +543,12 @@ export function AdminProductsClient({
                 label="Description"
                 required
                 value={description}
-                onChange={(e) => setDescription(e.target.value)}
+                error={fieldErrors.description}
+                helperText="Minimum 5 characters."
+                onChange={(e) => {
+                  setDescription(e.target.value);
+                  clearFieldError("description");
+                }}
               />
 
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
@@ -491,7 +565,11 @@ export function AdminProductsClient({
                   <NumberInput
                     label="Available Stock"
                     value={stockQuantity}
-                    onChange={setStockQuantity}
+                    error={fieldErrors.stockQuantity}
+                    onChange={(v) => {
+                      setStockQuantity(v);
+                      clearFieldError("stockQuantity");
+                    }}
                   />
                 )}
 
@@ -518,14 +596,28 @@ export function AdminProductsClient({
                 label="Variants / Options (Format: Label:PriceDeltaPKR, comma-separated)"
                 helperText="Example: 1.5 lb (Standard):0, 2.5 lb (Large):1800"
                 value={variantChoicesText}
-                onChange={(e) => setVariantChoicesText(e.target.value)}
+                error={fieldErrors.options}
+                onChange={(e) => {
+                  setVariantChoicesText(e.target.value);
+                  clearFieldError("options");
+                }}
               />
 
               {/* Multiple Images Management (Add, Reorder, Delete) */}
-              <div className="space-y-2 rounded-lg border p-3">
+              <div
+                className={cn(
+                  "space-y-2 rounded-lg border p-3",
+                  fieldErrors.images && "border-destructive"
+                )}
+              >
                 <p className="text-sm font-medium">
                   Product Gallery Images ({imageUrls.length})
                 </p>
+                {fieldErrors.images && (
+                  <p role="alert" className="text-xs font-medium text-destructive">
+                    {fieldErrors.images}
+                  </p>
+                )}
                 <div className="space-y-2">
                   {imageUrls.map((url, idx) => (
                     <div
@@ -582,6 +674,7 @@ export function AdminProductsClient({
                       if (newImageUrl.trim()) {
                         setImageUrls((prev) => [...prev, newImageUrl.trim()]);
                         setNewImageUrl("");
+                        clearFieldError("images");
                       }
                     }}
                   >

@@ -6,7 +6,7 @@ export const STRINGS = {
   brand: {
     defaultName: "Eshaal Bakes",
     defaultTagline: "Artisan Custom Cakes & Small-Batch Bakes in Karachi",
-    cityBadge: "Karachi, Pakistan • Freshly Baked to Order",
+    cityBadge: "Korangi, Karachi • Freshly Baked to Order",
   },
   nav: {
     menu: "Menu",
@@ -69,7 +69,7 @@ export const STRINGS = {
     areaLabel: "Karachi Delivery Area",
     areaPlaceholder: "Select your neighborhood in Karachi",
     addressLabel: "Complete Street Address / House / Apartment",
-    addressPlaceholder: "e.g. House 42-C, Lane 7, Phase 6 DHA, near Rahat Milk Corner",
+    addressPlaceholder: "e.g. House R-42, Sector 35-B, Korangi No. 4, Karachi",
     dateLabel: "Delivery Date",
     slotLabel: "Preferred Delivery Time Slot (PKT)",
     notesLabel: "Delivery or Gate Instructions (Optional)",

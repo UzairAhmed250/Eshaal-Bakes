@@ -118,7 +118,7 @@ export function ResponsiveDialogTrigger({
 }
 
 const desktopModalSizeVariants = cva(
-  "fixed left-1/2 top-1/2 z-50 flex max-h-[90dvh] w-[calc(100%-2rem)] -translate-x-1/2 -translate-y-1/2 flex-col overflow-hidden rounded-lg border bg-card text-card-foreground shadow-xl focus:outline-none",
+  "fixed left-1/2 top-1/2 z-50 flex max-h-[88vh] w-full -translate-x-1/2 -translate-y-1/2 flex-col overflow-hidden rounded-2xl border bg-card text-card-foreground shadow-2xl focus:outline-none",
   {
     variants: {
       size: {
@@ -133,6 +133,19 @@ const desktopModalSizeVariants = cva(
   }
 );
 
+const DESKTOP_MAX_WIDTH_MAP: Record<ResponsiveDialogSize, string> = {
+  sm: "28rem",
+  md: "32rem",
+  lg: "42rem",
+};
+
+/** Clicking a toast notification should never dismiss the open modal/drawer. */
+function isToastTarget(target: EventTarget | null): boolean {
+  return (
+    target instanceof Element && Boolean(target.closest("[data-toast-root]"))
+  );
+}
+
 export interface ResponsiveDialogContentProps
   extends React.HTMLAttributes<HTMLDivElement> {
   ariaLabel?: string;
@@ -141,7 +154,7 @@ export interface ResponsiveDialogContentProps
 export const ResponsiveDialogContent = React.forwardRef<
   HTMLDivElement,
   ResponsiveDialogContentProps
->(({ className, children, ariaLabel, ...props }, ref) => {
+>(({ className, children, ariaLabel, style, ...props }, ref) => {
   const { isDesktop, size, dismissible, showCloseButton } =
     useResponsiveDialogContext();
 
@@ -150,7 +163,13 @@ export const ResponsiveDialogContent = React.forwardRef<
       <DialogPrimitive.Portal>
         <DialogPrimitive.Overlay
           data-testid="responsive-dialog-overlay"
-          className="fixed inset-0 z-50 bg-foreground/50 backdrop-blur-xs transition-opacity"
+          className="fixed inset-0 z-50 bg-black/55 backdrop-blur-sm transition-opacity"
+          style={{
+            position: "fixed",
+            inset: 0,
+            zIndex: 50,
+            backgroundColor: "rgba(24, 16, 12, 0.55)",
+          }}
         />
         <DialogPrimitive.Content
           ref={ref}
@@ -160,19 +179,30 @@ export const ResponsiveDialogContent = React.forwardRef<
             if (!dismissible) event.preventDefault();
           }}
           onPointerDownOutside={(event) => {
-            if (!dismissible) event.preventDefault();
+            if (!dismissible || isToastTarget(event.target)) event.preventDefault();
           }}
           onInteractOutside={(event) => {
-            if (!dismissible) event.preventDefault();
+            if (!dismissible || isToastTarget(event.target)) event.preventDefault();
           }}
           className={cn(desktopModalSizeVariants({ size }), className)}
+          style={{
+            position: "fixed",
+            left: "50%",
+            top: "50%",
+            transform: "translate(-50%, -50%)",
+            width: "calc(100% - 2rem)",
+            maxWidth: DESKTOP_MAX_WIDTH_MAP[size],
+            maxHeight: "88vh",
+            zIndex: 50,
+            ...style,
+          }}
           {...props}
         >
           {children}
           {showCloseButton && dismissible && (
             <DialogPrimitive.Close
               aria-label="Close dialog"
-              className="absolute right-4 top-4 rounded-sm p-1 text-muted-foreground opacity-80 transition-opacity hover:bg-muted hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring"
+              className="absolute right-4 top-4 z-20 inline-flex h-8 w-8 items-center justify-center rounded-full border border-border/80 bg-background/90 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
             >
               <X className="h-4 w-4" />
             </DialogPrimitive.Close>
@@ -186,7 +216,13 @@ export const ResponsiveDialogContent = React.forwardRef<
     <DrawerPrimitive.Portal>
       <DrawerPrimitive.Overlay
         data-testid="responsive-drawer-overlay"
-        className="fixed inset-0 z-50 bg-foreground/50 backdrop-blur-xs"
+        className="fixed inset-0 z-50 bg-black/55 backdrop-blur-sm"
+        style={{
+          position: "fixed",
+          inset: 0,
+          zIndex: 50,
+          backgroundColor: "rgba(24, 16, 12, 0.55)",
+        }}
       />
       <DrawerPrimitive.Content
         ref={ref}
@@ -196,28 +232,24 @@ export const ResponsiveDialogContent = React.forwardRef<
           if (!dismissible) event.preventDefault();
         }}
         onPointerDownOutside={(event) => {
-          if (!dismissible) event.preventDefault();
+          if (!dismissible || isToastTarget(event.target)) event.preventDefault();
         }}
         className={cn(
-          "fixed inset-x-0 bottom-0 z-50 mt-12 flex max-h-[90dvh] flex-col overflow-hidden rounded-t-2xl border bg-card pb-safe-bottom text-card-foreground shadow-xl focus:outline-none",
+          "fixed inset-x-0 bottom-0 z-50 mt-12 flex max-h-[88vh] flex-col overflow-hidden rounded-t-2xl border bg-card text-card-foreground shadow-2xl focus:outline-none",
           className
         )}
+        style={{
+          maxHeight: "88vh",
+          ...style,
+        }}
         {...props}
       >
-        {/* Drag handle for mobile swipe down */}
+        {/* Drag handle for mobile swipe down (no X close button on mobile drawer) */}
         <div
           data-testid="drawer-drag-handle"
           className="mx-auto mt-3 mb-1 h-1.5 w-12 shrink-0 rounded-full bg-muted-foreground/30"
           aria-hidden="true"
         />
-        {showCloseButton && dismissible && (
-          <DrawerPrimitive.Close
-            aria-label="Close dialog"
-            className="absolute right-4 top-3 rounded-sm p-1.5 text-muted-foreground opacity-80 hover:bg-muted hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring"
-          >
-            <X className="h-4 w-4" />
-          </DrawerPrimitive.Close>
-        )}
         {children}
       </DrawerPrimitive.Content>
     </DrawerPrimitive.Portal>
@@ -227,14 +259,25 @@ ResponsiveDialogContent.displayName = "ResponsiveDialogContent";
 
 export function ResponsiveDialogHeader({
   className,
+  style,
   ...props
 }: React.HTMLAttributes<HTMLDivElement>) {
+  const { isDesktop, showCloseButton, dismissible } =
+    useResponsiveDialogContext();
   return (
     <div
       className={cn(
-        "flex flex-col space-y-1.5 border-b px-5 py-4 text-left shrink-0",
+        "flex shrink-0 flex-col space-y-1.5 border-b px-6 py-4 text-left",
+        isDesktop && showCloseButton && dismissible && "pr-14",
         className
       )}
+      style={{
+        paddingTop: "1.125rem",
+        paddingBottom: "1.125rem",
+        paddingLeft: "1.5rem",
+        paddingRight: isDesktop && showCloseButton && dismissible ? "3.5rem" : "1.5rem",
+        ...style,
+      }}
       {...props}
     />
   );
@@ -290,11 +333,19 @@ export function ResponsiveDialogDescription({
 
 export function ResponsiveDialogBody({
   className,
+  style,
   ...props
 }: React.HTMLAttributes<HTMLDivElement>) {
   return (
     <div
-      className={cn("flex-1 overflow-y-auto px-5 py-4", className)}
+      className={cn("min-h-0 flex-1 overflow-y-auto px-6 py-5", className)}
+      style={{
+        paddingTop: "1.25rem",
+        paddingBottom: "1.25rem",
+        paddingLeft: "1.5rem",
+        paddingRight: "1.5rem",
+        ...style,
+      }}
       {...props}
     />
   );
@@ -302,14 +353,22 @@ export function ResponsiveDialogBody({
 
 export function ResponsiveDialogFooter({
   className,
+  style,
   ...props
 }: React.HTMLAttributes<HTMLDivElement>) {
   return (
     <div
       className={cn(
-        "sticky bottom-0 z-10 flex flex-col-reverse gap-2 border-t bg-card px-5 py-3.5 pb-safe-bottom sm:flex-row sm:justify-end shrink-0",
+        "sticky bottom-0 z-10 flex shrink-0 flex-col-reverse gap-3 border-t bg-card px-6 py-4 sm:flex-row sm:items-center sm:justify-end",
         className
       )}
+      style={{
+        paddingTop: "1rem",
+        paddingBottom: "1.125rem",
+        paddingLeft: "1.5rem",
+        paddingRight: "1.5rem",
+        ...style,
+      }}
       {...props}
     />
   );

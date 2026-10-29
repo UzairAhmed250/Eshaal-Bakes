@@ -284,28 +284,37 @@ export function StoreLayout({ settings, children }: StoreLayoutProps) {
                 {items.map((item) => (
                   <div
                     key={item.cartItemId}
-                    className="flex items-start justify-between gap-3 rounded-xl border bg-background p-3"
+                    className="flex items-center justify-between gap-3 rounded-xl border bg-background p-3"
                   >
-                    <div className="flex-1 space-y-1">
-                      <p className="text-sm font-semibold text-foreground">
-                        {item.name}
-                      </p>
-                      {item.variantLabel && (
-                        <p className="text-xs text-muted-foreground">
-                          Option: {item.variantLabel}
-                        </p>
-                      )}
-                      {item.customText && (
-                        <p className="text-xs italic text-primary">
-                          Message: &ldquo;{item.customText}&rdquo;
-                        </p>
-                      )}
-                      <PriceText
-                        amountPkr={item.unitPricePkr * item.quantity}
-                        size="sm"
+                    <div className="flex min-w-0 flex-1 items-center gap-3">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={item.imageUrl}
+                        alt={item.name}
+                        className="h-14 w-14 shrink-0 rounded-lg border bg-muted object-cover"
+                        style={{ height: "56px", width: "56px", objectFit: "cover" }}
                       />
+                      <div className="min-w-0 flex-1 space-y-0.5">
+                        <p className="truncate text-sm font-semibold text-foreground">
+                          {item.name}
+                        </p>
+                        {item.variantLabel && (
+                          <p className="truncate text-xs text-muted-foreground">
+                            Option: {item.variantLabel}
+                          </p>
+                        )}
+                        {item.customText && (
+                          <p className="truncate text-xs italic text-primary">
+                            Message: &ldquo;{item.customText}&rdquo;
+                          </p>
+                        )}
+                        <PriceText
+                          amountPkr={item.unitPricePkr * item.quantity}
+                          size="sm"
+                        />
+                      </div>
                     </div>
-                    <div className="flex items-center gap-2">
+                    <div className="flex shrink-0 items-center gap-2">
                       <QuantityStepper
                         size="sm"
                         value={item.quantity}
@@ -316,7 +325,7 @@ export function StoreLayout({ settings, children }: StoreLayoutProps) {
                         type="button"
                         aria-label={`Remove ${item.name}`}
                         onClick={() => removeItem(item.cartItemId)}
-                        className="rounded p-1.5 text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
+                        className="rounded-md p-1.5 text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive"
                       >
                         <Trash2 className="h-4 w-4" />
                       </button>

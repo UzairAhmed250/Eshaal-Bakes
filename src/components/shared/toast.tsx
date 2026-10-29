@@ -54,7 +54,9 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
       {children}
       <div
         aria-live="polite"
-        className="pointer-events-none fixed bottom-4 right-4 z-50 flex w-full max-w-sm flex-col gap-2 px-4 sm:px-0"
+        data-toast-root=""
+        className="pointer-events-none fixed bottom-4 right-4 z-[100] flex w-full max-w-sm flex-col gap-2 px-4 sm:px-0"
+        style={{ zIndex: 100 }}
       >
         {toasts.map((t) => (
           <div
@@ -62,7 +64,7 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
             role="status"
             className={cn(
               "pointer-events-auto flex items-start gap-3 rounded-lg border bg-card p-3.5 text-card-foreground shadow-lg transition-all",
-              t.variant === "error" && "border-destructive/50 bg-destructive/10",
+              t.variant === "error" && "border-destructive/50 bg-card",
               t.variant === "success" && "border-success/50 bg-card"
             )}
           >

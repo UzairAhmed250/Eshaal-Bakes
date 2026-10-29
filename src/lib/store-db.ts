@@ -62,18 +62,20 @@ function createInitialSeedState(): InternalDatabaseState {
     whatsapp_number: "923001234567",
     delivery_fee_pkr: 350,
     delivery_areas: [
-      "DHA Phase 1-8",
-      "Clifton",
+      "Korangi",
+      "Landhi",
+      "Malir / Model Colony",
+      "Shah Faisal Colony",
       "PECHS / Tariq Road",
-      "Bahadurabad / Sharfabad",
+      "Defence (DHA)",
+      "Clifton",
       "Gulshan-e-Iqbal",
       "Gulistan-e-Jauhar",
       "North Nazimabad",
-      "Karsaz",
     ],
     is_open: true,
     announcement_banner:
-      "Fresh celebration cakes & fudgy brownies baked daily in DHA Karachi! Same-day delivery available for orders placed before 1:00 PM.",
+      "Fresh celebration cakes & fudgy brownies baked daily in Korangi, Karachi! Same-day delivery available for orders placed before 1:00 PM.",
     payment_instructions:
       "Easypaisa / JazzCash: 0300-1234567 (Eshaal Fatima) | Meezan Bank IBAN: PK36MEZN0001234567890102. Please send payment screenshot on WhatsApp quoting your Order Code.",
     min_lead_time_hours: 5,
@@ -497,21 +499,29 @@ function createInitialSeedState(): InternalDatabaseState {
 }
 
 let memoryCache: InternalDatabaseState | null = null;
+let memoryCacheMtimeMs = 0;
 
 function readState(): InternalDatabaseState {
-  if (memoryCache) {
-    return memoryCache;
-  }
-
   try {
     if (fs.existsSync(DB_FILE_PATH)) {
+      const stat = fs.statSync(DB_FILE_PATH);
+      if (memoryCache && stat.mtimeMs === memoryCacheMtimeMs) {
+        return memoryCache;
+      }
       const raw = fs.readFileSync(DB_FILE_PATH, "utf8");
       const parsed = JSON.parse(raw) as InternalDatabaseState;
       memoryCache = parsed;
+      memoryCacheMtimeMs = stat.mtimeMs;
       return parsed;
     }
   } catch {
-    // Re-seed if file is missing or corrupted
+    if (memoryCache) {
+      return memoryCache;
+    }
+  }
+
+  if (memoryCache) {
+    return memoryCache;
   }
 
   const seeded = createInitialSeedState();
@@ -526,6 +536,7 @@ function writeState(state: InternalDatabaseState): void {
       fs.mkdirSync(DATA_DIR, { recursive: true });
     }
     fs.writeFileSync(DB_FILE_PATH, JSON.stringify(state, null, 2), "utf8");
+    memoryCacheMtimeMs = fs.statSync(DB_FILE_PATH).mtimeMs;
   } catch {
     // In read-only test sandboxes, keep in memoryCache
   }

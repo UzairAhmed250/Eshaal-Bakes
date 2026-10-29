@@ -72,7 +72,7 @@ export function CustomOrderClient({
     defaultSchedule.slot
   );
   const [deliveryArea, setDeliveryArea] = React.useState(
-    settings.delivery_areas[0] ?? "DHA Phase 1-8"
+    settings.delivery_areas[0] ?? "Korangi"
   );
   const [deliveryAddress, setDeliveryAddress] = React.useState("");
   const [customerNotes, setCustomerNotes] = React.useState("");
